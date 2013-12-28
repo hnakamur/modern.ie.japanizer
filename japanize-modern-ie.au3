@@ -1,3 +1,7 @@
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_UseUpx=n
+#AutoIt3Wrapper_Run_Tidy=y
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <Constants.au3>
 #include <myutil.au3>
 
@@ -12,6 +16,7 @@ If $CmdLine[0] = 0 Then
 	MyUtil_Reboot()
 ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step2" Then
 	ChangeDisplayLanguageToJapanese()
+	MyUtil_Reboot()
 EndIf
 
 Func InstallJapaneseLanguagePack()
@@ -29,13 +34,13 @@ Func InstallJapaneseLanguagePack()
 
 	; Hide update of Internet Explorer 10 for Windows 7
 	If MyUtil_ListViewGoToItem($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
-		"Internet Explorer 10 for Windows 7", 1) = 0 Then
+			"Internet Explorer 10 for Windows 7", 1) = 0 Then
 		Send("{APPSKEY}{DOWN 2}{ENTER}")
 		Sleep(1000)
 	EndIf
 	; Hide update of Internet Explorer 11 for Windows 7
 	If MyUtil_ListViewGoToItem($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
-		"Internet Explorer 11 for Windows 7", 1) = 0 Then
+			"Internet Explorer 11 for Windows 7", 1) = 0 Then
 		Send("{APPSKEY}{DOWN 2}{ENTER}")
 		Sleep(1000)
 	EndIf
@@ -52,8 +57,8 @@ Func InstallJapaneseLanguagePack()
 	; Check Japanese Language Pack
 	Local Const $iItemCountInWindows7Section = 5
 	If MyUtil_ListViewGoToItemWithOffset($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
-		"Japanese Language Pack - Windows 7 Service Pack 1 (KB2483139)", 1, _
-		$iItemCountInWindows7Section + 1) = 0 Then
+			"Japanese Language Pack - Windows 7 Service Pack 1 (KB2483139)", 1, _
+			$iItemCountInWindows7Section + 1) = 0 Then
 		Send("{SPACE}")
 		Sleep(1000)
 	Else
@@ -64,8 +69,8 @@ Func InstallJapaneseLanguagePack()
 	WinWaitActive($title)
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
 
+	; Wait for [Restart now] button, but don't press it.
 	MyUtil_ControlWaitVisible($hWnd, "", "[CLASS:Button; TEXT:&Restart now]")
-	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Restart now]")
 EndFunc   ;==>InstallJapaneseLanguagePack
 
 Func ChangeDisplayLanguageToJapanese()
@@ -101,12 +106,6 @@ Func ChangeDisplayLanguageToJapanese()
 	; Choose Japanese as Display Language
 	ControlSend($hWnd, "", "[CLASS:ComboBox; INSTANCE:1]", "{DOWN}")
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:OK]")
-
-	Local $hWnd4 = WinWait("Change Display Language")
-
-	; Prefer reboot to logoff because you don't have to input passwords manually.
-	;ControlClick($hWnd4, "", "[CLASS:Button; TEXT:Log off now]")
-	MyUtil_Reboot()
 EndFunc   ;==>ChangeDisplayLanguageToJapanese
 
 Func ChangeTimeZoneToJST()
@@ -124,4 +123,4 @@ EndFunc   ;==>ChangeTimeZoneToJST
 Func MyExit()
 	MsgBox(0, @ScriptName, "Aborting now because the hot-key was pressed.", 3);
 	Exit
-EndFunc
+EndFunc   ;==>MyExit
