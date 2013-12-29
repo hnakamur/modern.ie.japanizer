@@ -1,31 +1,61 @@
-#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+﻿#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <Constants.au3>
+#include <myprogress.au3>
 #include <myutil.au3>
 
 HotKeySet("^!x", "MyExit")
 
+$MyProgress_StepCount = 19
 If $CmdLine[0] = 0 Then
+	MyProgress_On("modern.IE Japanizer", _
+			"Start GUI automation.", _
+			"Do not touch mouse nor keyboard while running.")
 	ChangeTimeZoneToJST()
 	InstallJapaneseLanguagePack()
+
+	MyProgress_Step("Will continue processing after rebooting.", _
+			"Reboot needed to use Japanese language pack.")
+	Sleep(1000)
 
 	FileCopy(@ScriptFullPath, @TempDir)
 	MyUtil_RegWriteRunOnce(@ScriptName, @TempDir & "\" & @ScriptName & " " & "step2")
 	MyUtil_Reboot()
 ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step2" Then
+	MyProgress_On("modern.IE Japanizer", _
+			"Continue GUI automation.")
+	$MyProgress_StepIndex = 10
+	MyProgress_Step("Do not touch mouse nor keyboard while running.")
+	Sleep(1000)
+
 	ChangeDisplayLanguageToJapanese()
+
+	MyProgress_Step("Will reboot to take effect.", _
+			"Reboot preferred to Logging off to avoid typing password.")
+	Sleep(1000)
+
+	MyUtil_RegWriteRunOnce(@ScriptName, @TempDir & "\" & @ScriptName & " " & "step3")
 	MyUtil_Reboot()
+ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step3" Then
+	MyProgress_On("modern.IE Japanizer", _
+			"日本語環境のセットアップが完了しました。")
+	MyProgress_Set(100)
+	Sleep(5000)
+	MyProgress_Off()
 EndIf
 
 Func InstallJapaneseLanguagePack()
+	MyProgress_Step("Checking updates...", "Install Windows Update.")
+
 	; >= Vista
 	Run("control /name Microsoft.WindowsUpdate")
 	$title = "Windows Update"
 	Local $hWnd = WinWait($title)
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Check for updates]")
 	MyUtil_ControlWaitVisible($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
+	MyProgress_Step("Update check done.")
 
 	; Go to important update list.
 	ControlFocus($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
@@ -36,12 +66,14 @@ Func InstallJapaneseLanguagePack()
 	If MyUtil_ListViewGoToItem($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
 			"Internet Explorer 10 for Windows 7", 1) = 0 Then
 		Send("{APPSKEY}{DOWN 2}{ENTER}")
+		MyProgress_Step("Hide update of Internet Explorer 10 for Windows 7")
 		Sleep(1000)
 	EndIf
 	; Hide update of Internet Explorer 11 for Windows 7
 	If MyUtil_ListViewGoToItem($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
 			"Internet Explorer 11 for Windows 7", 1) = 0 Then
 		Send("{APPSKEY}{DOWN 2}{ENTER}")
+		MyProgress_Step("Hide update of Internet Explorer 11 for Windows 7")
 		Sleep(1000)
 	EndIf
 
@@ -60,20 +92,26 @@ Func InstallJapaneseLanguagePack()
 			"Japanese Language Pack - Windows 7 Service Pack 1 (KB2483139)", 1, _
 			$iItemCountInWindows7Section + 1) = 0 Then
 		Send("{SPACE}")
+		MyProgress_Step("Selected Japanese Language Pack to install")
 		Sleep(1000)
 	Else
 		MsgBox(0, @ScriptName, "japanese language pack not found in list", 5)
 	EndIf
 
+	MyProgress_Step("Installing Japanese language pack and other updates.")
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:OK]")
 	WinWaitActive($title)
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
 
 	; Wait for [Restart now] button, but don't press it.
 	MyUtil_ControlWaitVisible($hWnd, "", "[CLASS:Button; TEXT:&Restart now]")
+	MyProgress_Step("Finished installation.")
+	Sleep(1000)
 EndFunc   ;==>InstallJapaneseLanguagePack
 
 Func ChangeDisplayLanguageToJapanese()
+	MyProgress_Step("Start processing.", "Change Display Language.")
+
 	Run("control international")
 	$title = "Region and Language"
 	Local $hWnd = WinWait($title)
@@ -81,16 +119,19 @@ Func ChangeDisplayLanguageToJapanese()
 	MyUtil_SelectTab($hWnd, "", "[CLASS:SysTabControl32; INSTANCE:1]", "Formats")
 	; Select Format
 	ControlCommand($hWnd, "", "[CLASS:ComboBox; INSTANCE:1]", "SelectString", "Japanese (Japan)")
+	MyProgress_Step("Changed format.")
 
 	MyUtil_SelectTab($hWnd, "", "[CLASS:SysTabControl32; INSTANCE:1]", "Location")
 	; Select Current location
 	ControlCommand($hWnd, "", "[CLASS:ComboBox; INSTANCE:1]", "SelectString", "Japan")
+	MyProgress_Step("Changed location.")
 
 	MyUtil_SelectTab($hWnd, "", "[CLASS:SysTabControl32; INSTANCE:1]", "Keyboards and Languages")
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Change keyboards...]")
 
 	Local $hWnd2 = WinWait("Text Services and Input Languages")
 	ControlClick($hWnd2, "", "[CLASS:Button; TEXT:A&dd...]")
+	MyProgress_Step("Added keyboard.")
 
 	; Add Japanese IME to input language
 	Local $hWnd3 = WinWait("Add Input Language")
@@ -98,17 +139,24 @@ Func ChangeDisplayLanguageToJapanese()
 	ControlTreeView($hWnd3, "", "[CLASS:SysTreeView32; INSTANCE:1]", "Expand", "Japanese (Japan)|Keyboard")
 	ControlTreeView($hWnd3, "", "[CLASS:SysTreeView32; INSTANCE:1]", "Check", "Japanese (Japan)|Keyboard|Microsoft IME")
 	ControlClick($hWnd3, "", "[CLASS:Button; TEXT:OK]")
+	MyProgress_Step("Added Japanese IME.")
 
 	; Choose Japanese IME as Default input language
 	ControlCommand($hWnd2, "", "[CLASS:ComboBox; INSTANCE:1]", "SelectString", "Japanese (Japan) - Microsoft IME")
 	ControlClick($hWnd2, "", "[CLASS:Button; TEXT:OK]")
+	MyProgress_Step("Set Japanese IME as default.")
 
 	; Choose Japanese as Display Language
 	ControlSend($hWnd, "", "[CLASS:ComboBox; INSTANCE:1]", "{DOWN}")
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:OK]")
+
+	MyProgress_Step("Done processing.")
+	Sleep(1000)
 EndFunc   ;==>ChangeDisplayLanguageToJapanese
 
 Func ChangeTimeZoneToJST()
+	MyProgress_Step("Start processing.", "Change Time Zone to JST.")
+
 	Run("control date/time")
 	Local $hWnd = WinWait("Date and Time")
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:Change time &zone...]")
@@ -118,6 +166,9 @@ Func ChangeTimeZoneToJST()
 	ControlClick($hWnd2, "", "[CLASS:Button; TEXT:OK]")
 
 	ControlClick($hWnd, "", "[CLASS:Button; TEXT:OK]")
+
+	MyProgress_Step("Done processing.")
+	Sleep(1000)
 EndFunc   ;==>ChangeTimeZoneToJST
 
 Func MyExit()
