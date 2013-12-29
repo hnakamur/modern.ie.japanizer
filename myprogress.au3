@@ -6,7 +6,7 @@ Global $MyProgress_MainText = ""
 
 ; NOTE: $MyProgress_SubTextSuffix must be one line text.
 Global $MyProgress_SubTextSuffix = _
-		"If GUI automation goes wrong, press ALT+SHIFT+x to stop."
+		"Press alt+shift+x to stop if GUI automation goes wrong."
 
 Func MyProgress_buildSubText($subtext)
 	If StringInStr($subtext, @CRLF) = 0 Then
