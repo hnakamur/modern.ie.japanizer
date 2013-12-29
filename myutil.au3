@@ -12,7 +12,7 @@ Func MyUtil_SelectTab($title, $text, $controlID, $sTabName)
 	EndIf
 	_GUICtrlTab_SetCurFocus($hWnd, $iIndex)
 	Return 0
-EndFunc
+EndFunc   ;==>MyUtil_SelectTab
 
 Func MyUtil_ListViewGoToItem($title, $text, $controlID, $sItemText, $iSubItem)
 	Local $iIndex = ControlListView($title, $text, $controlID, "FindItem", $sItemText, $iSubItem)
@@ -28,7 +28,7 @@ Func MyUtil_ListViewGoToItem($title, $text, $controlID, $sItemText, $iSubItem)
 	EndIf
 	ControlSend($title, $text, $controlID, $sKeys)
 	Return 0
-EndFunc
+EndFunc   ;==>MyUtil_ListViewGoToItem
 
 Func MyUtil_ListViewGoToItemWithOffset($title, $text, $controlID, $sItemText, $iSubItem, $iOffset)
 	Local $iIndex = ControlListView($title, $text, $controlID, "FindItem", $sItemText, $iSubItem)
@@ -45,22 +45,22 @@ Func MyUtil_ListViewGoToItemWithOffset($title, $text, $controlID, $sItemText, $i
 	EndIf
 	ControlSend($title, $text, $controlID, $sKeys)
 	Return 0
-EndFunc
+EndFunc   ;==>MyUtil_ListViewGoToItemWithOffset
 
 Func MyUtil_ControlWaitVisible($title, $text, $controlID)
-        Do
-                Sleep(100)
-        Until ControlCommand($title, $text, $controlID, "IsVisible") = 1
-EndFunc
+	Do
+		Sleep(100)
+	Until ControlCommand($title, $text, $controlID, "IsVisible") = 1
+EndFunc   ;==>MyUtil_ControlWaitVisible
 
 Func MyUtil_Reboot()
 	Shutdown(BitOR($SD_FORCE, $SD_REBOOT))
-EndFunc
+EndFunc   ;==>MyUtil_Reboot
 
 Func MyUtil_RegWriteRunOnce($valuename, $value)
 	Return RegWrite( _
-		"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce", _
-		$valuename, _
-		"REG_SZ", _
-		$value)
-EndFunc
+			"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce", _
+			$valuename, _
+			"REG_SZ", _
+			$value)
+EndFunc   ;==>MyUtil_RegWriteRunOnce
