@@ -1,5 +1,6 @@
 #!/bin/bash
-vmname='IE8 - Win7'
+#vmname='IE8 - Win7'
+vmname='IE11 - Win8.1'
 
 # NOTE: The --transient option does not work as expected here.
 #       The guest vm cannot see the shared folder when using the --transient
@@ -12,7 +13,7 @@ if [ x"$1" = x"--no-run" ]; then
   exit 0
 fi
 
-sleep 25
+sleep 20
 
 # NOTE: "VBoxManage guestcontrol exec" does not work for an executable file in
 #       a shared folder.

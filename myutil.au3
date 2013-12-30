@@ -1,6 +1,15 @@
 #include <Constants.au3>
 #include <GuiTab.au3>
 
+Func MyUtil_WinWaitActivate($title, $text = "", $timeout = 0)
+	Local $hWnd = WinWait($title, $text, $timeout)
+	If Not WinActive($hWnd) Then
+		WinActivate($hWnd)
+		WinWaitActive($hWnd)
+	EndIf
+	Return $hWnd
+EndFunc
+
 Func MyUtil_SelectTab($title, $text, $controlID, $sTabName)
 	Local $hWnd = ControlGetHandle($title, $text, $controlID)
 	If $hWnd = 0 Then

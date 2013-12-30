@@ -8,43 +8,105 @@
 
 HotKeySet("^!x", "MyExit")
 
-$MyProgress_StepCount = 19
-If $CmdLine[0] = 0 Then
+If @OSVersion = "Win_81" Or @OSVersion = "Win_8" Then
+	JapanizeWin8()
+ElseIf @OSVersion = "Win_7" Then
+	JapanizeWin7()
+Else
+	MsgBox(0, "modern.IE Japanizer", "This version of Windows is not supported. OSVersion=" & @OSVersion)
+EndIf
+Exit
+
+Func JapanizeWin8()
+	$MyProgress_StepCount = 8
 	MyProgress_On("modern.IE Japanizer", _
 			"Start GUI automation.", _
 			"Do not touch mouse nor keyboard while running.")
+
 	ChangeTimeZoneToJST()
-	InstallJapaneseLanguagePack()
+	ChangeRegsionWin8()
 
-	MyProgress_Step("Will continue processing after rebooting.", _
-			"Reboot needed to use Japanese language pack.")
-	Sleep(1000)
+	Run("control /name Microsoft.Language")
 
-	FileCopy(@ScriptFullPath, @TempDir)
-	MyUtil_RegWriteRunOnce(@ScriptName, @TempDir & "\" & @ScriptName & " " & "step2")
-	MyUtil_Reboot()
-ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step2" Then
-	MyProgress_On("modern.IE Japanizer", _
-			"Continue GUI automation.")
-	$MyProgress_StepIndex = 10
-	MyProgress_Step("Do not touch mouse nor keyboard while running.")
-	Sleep(1000)
+	WinWaitActive("Language")
+	Send("j{ENTER}")
 
-	ChangeDisplayLanguageToJapanese()
+	MyProgress_Step('Waiting for "Download and install language pack" link.', _
+			"Install Japanese language pack.")
 
-	MyProgress_Step("Will reboot to take effect.", _
-			"Reboot preferred to Logging off to avoid typing password.")
-	Sleep(1000)
+	Local $hWnd = WinWaitActive("Language options")
+	Sleep(10000)
+	ControlFocus($hWnd, "", "[CLASS:Button; TEXT:Cancel]")
+	Send("{TAB 4}{SPACE}")
 
-	MyUtil_RegWriteRunOnce(@ScriptName, @TempDir & "\" & @ScriptName & " " & "step3")
-	MyUtil_Reboot()
-ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step3" Then
-	MyProgress_On("modern.IE Japanizer", _
-			"日本語環境のセットアップが完了しました。")
-	MyProgress_Set(100)
-	Sleep(5000)
+	MyProgress_Step("Waiting for download and install...", _
+			"Install Japanese language pack")
+
+	WinWaitActive("Download and Install Updates")
+	MyUtil_ControlWaitVisible("Download and Install Updates", "", "[CLASS:Button; TEXT:Close]")
+
 	MyProgress_Off()
-EndIf
+	MsgBox(0, "modern.IE Japanizer", 'Press Close button on "Download and Install Updates" MANUALLY.')
+	MyProgress_On("modern.IE Japanizer", _
+			"Change default language", _
+			"Make Japanese the primary languge.")
+	Sleep(2000)
+
+	MyUtil_WinWaitActivate("Language")
+	Send("{ENTER}")
+
+	$hWnd = WinWait("Language options")
+	ControlFocus($hWnd, "", "[CLASS:Button; TEXT:Cancel]")
+	Send("{TAB 3}{SPACE}")
+
+	WinWaitActive("Change display language")
+
+	MyProgress_Step("Will reboot to take effect of Japanization now.", _
+			"Complete")
+	Sleep(5000)
+
+	MyUtil_Reboot()
+EndFunc   ;==>JapanizeWin8
+
+Func JapanizeWin7()
+	$MyProgress_StepCount = 19
+	If $CmdLine[0] = 0 Then
+		MyProgress_On("modern.IE Japanizer", _
+				"Start GUI automation.", _
+				"Do not touch mouse nor keyboard while running.")
+		ChangeTimeZoneToJST()
+		InstallJapaneseLanguagePack()
+
+		MyProgress_Step("Will continue processing after rebooting.", _
+				"Reboot needed to use Japanese language pack.")
+		Sleep(1000)
+
+		FileCopy(@ScriptFullPath, @TempDir)
+		MyUtil_RegWriteRunOnce(@ScriptName, @TempDir & "\" & @ScriptName & " " & "step2")
+		MyUtil_Reboot()
+	ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step2" Then
+		MyProgress_On("modern.IE Japanizer", _
+				"Continue GUI automation.")
+		$MyProgress_StepIndex = 10
+		MyProgress_Step("Do not touch mouse nor keyboard while running.")
+		Sleep(1000)
+
+		ChangeDisplayLanguageToJapanese()
+
+		MyProgress_Step("Will reboot to take effect.", _
+				"Reboot preferred to Logging off to avoid typing password.")
+		Sleep(1000)
+
+		MyUtil_RegWriteRunOnce(@ScriptName, @TempDir & "\" & @ScriptName & " " & "step3")
+		MyUtil_Reboot()
+	ElseIf $CmdLine[0] = 1 And $CmdLine[1] = "step3" Then
+		MyProgress_On("modern.IE Japanizer", _
+				"日本語環境のセットアップが完了しました。")
+		MyProgress_Set(100)
+		Sleep(5000)
+		MyProgress_Off()
+	EndIf
+EndFunc   ;==>JapanizeWin7
 
 Func InstallJapaneseLanguagePack()
 	MyProgress_Step("Checking updates...", "Install Windows Update.")
@@ -109,6 +171,34 @@ Func InstallJapaneseLanguagePack()
 	Sleep(1000)
 EndFunc   ;==>InstallJapaneseLanguagePack
 
+Func ChangeRegsionWin8()
+	MyProgress_Step("Start processing.", "Change Region.")
+
+	Run("control international")
+	Local $hWnd = WinWait("Region")
+
+	MyUtil_SelectTab($hWnd, "", "[CLASS:SysTabControl32; INSTANCE:1]", "Location")
+	ControlCommand($hWnd, "", "[CLASS:ComboBox; INSTANCE:1]", "SelectString", "Japan")
+	MyProgress_Step("Changed location.")
+	Sleep(2000)
+
+	MyUtil_SelectTab($hWnd, "", "[CLASS:SysTabControl32; INSTANCE:1]", "Administrative")
+	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Change system locale...]")
+
+	Local $hWnd2 = WinWaitActive("Change Regional Options")
+	ControlClick($hWnd2, "", "[CLASS:Button; TEXT:Apply]")
+
+	Local $hWnd3 = WinWaitActive("Region Settings")
+	ControlCommand($hWnd3, "", "[CLASS:ComboBox; INSTANCE:1]", "SelectString", "Japanese (Japan)")
+	ControlClick($hWnd3, "", "[CLASS:Button; TEXT:OK]")
+
+	Local $hWnd4 = WinWait("Change System Locale")
+	ControlClick($hWnd4, "", "[CLASS:Button; TEXT:Cancel]")
+
+	MyProgress_Step("Changed system locale.", "Change Region.")
+	Sleep(2000)
+EndFunc   ;==>ChangeRegsionWin8
+
 Func ChangeDisplayLanguageToJapanese()
 	MyProgress_Step("Start processing.", "Change Display Language.")
 
@@ -172,6 +262,7 @@ Func ChangeTimeZoneToJST()
 EndFunc   ;==>ChangeTimeZoneToJST
 
 Func MyExit()
+	MyProgress_Off()
 	MsgBox(0, @ScriptName, "Aborting now because the hot-key was pressed.", 3);
 	Exit
 EndFunc   ;==>MyExit
