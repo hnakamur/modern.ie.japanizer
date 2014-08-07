@@ -15,4 +15,10 @@ To do
 
 * More error checks.
 * Show progresses while running.
-* Implement for other VMs than 'IE8 - Win7'
+
+## License
+
+- My sources: MIT
+- UIAWrappers.au3: GPL 
+    - downloaded from http://www.autoitscript.com/forum/topic/153520-iuiautomation-ms-framework-automate-chrome-ff-ie/
+

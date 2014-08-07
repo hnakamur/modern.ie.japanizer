@@ -3,8 +3,11 @@
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <Constants.au3>
+#include <myauto.au3>
 #include <myprogress.au3>
 #include <myutil.au3>
+
+Opt("MustDeclareVars", 0)
 
 HotKeySet("^!x", "MyExit")
 
@@ -109,67 +112,72 @@ Func JapanizeWin7()
 EndFunc   ;==>JapanizeWin7
 
 Func InstallJapaneseLanguagePack()
-	MyProgress_Step("Checking updates...", "Install Windows Update.")
+    MyProgress_Step("Checking updates...", "Install Windows Update.")
 
-	; >= Vista
+    ; >= Vista
 	Run("control /name Microsoft.WindowsUpdate")
-	$title = "Windows Update"
+    Local $title = "Windows Update"
 	Local $hWnd = WinWait($title)
-	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Check for updates]")
-	MyUtil_ControlWaitVisible($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
-	MyProgress_Step("Update check done.")
 
-	; Go to important update list.
-	ControlFocus($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
-	Send("+{TAB}+{TAB}{SPACE}")
-	Local $hWnd2 = WinWaitActive("Select updates to install")
+    Local Const $cControlPanelWindowsUpdate = "classname:=CabinetWClass"
+    Local Const $cCheckingForUpdatesLabel = "title:=^Checking for updates\.\.\.$"
+    Local Const $cCheckForUpdateLink = "classname:=ControlPanelLink;title:=^Check for updates$"
+    Local Const $cImportantUpdateAvailableLink = "title:=^\d+ important updates are available$"
+    Local Const $cImportantUpdateListLink = "title:=^Important update list, \d+ updates$"
+    Local Const $cOptionalUpdateListLink = "title:=^Optional update list, \d+ updates$"
+    Local Const $cJapaneseLanguagePackListItem = "title:=^Japanese Language Pack - Windows.*"
+    Local Const $cOKButton = "classname:=Button;title:=^OK$"
+    Local Const $cInstallUpdatesButton = "classname:=Button;title:=Install updates$"
 
-	; Hide update of Internet Explorer 10 for Windows 7
-	If MyUtil_ListViewGoToItem($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
-			"Internet Explorer 10 for Windows 7", 1) = 0 Then
-		Send("{APPSKEY}{DOWN 2}{ENTER}")
-		MyProgress_Step("Hide update of Internet Explorer 10 for Windows 7")
-		Sleep(1000)
-	EndIf
-	; Hide update of Internet Explorer 11 for Windows 7
-	If MyUtil_ListViewGoToItem($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
-			"Internet Explorer 11 for Windows 7", 1) = 0 Then
-		Send("{APPSKEY}{DOWN 2}{ENTER}")
-		MyProgress_Step("Hide update of Internet Explorer 11 for Windows 7")
-		Sleep(1000)
-	EndIf
+    Local $oWnd = MyAuto_FindTopLevelWindow($cControlPanelWindowsUpdate)
+    If Not MyAuto_DoesObjectExist($oWnd, $cImportantUpdateAvailableLink) Then
+	    MyAuto_clickObject($oWnd, $cCheckForUpdateLink)
+	    MyAuto_WaitUntilObjectDisappear($oWnd, $cCheckingForUpdatesLabel)
+    EndIf
+    MyProgress_Step("Update check done.")
 
-	; Go back to the previous screen
-	Send("!{LEFT}")
-	$hWnd = WinWait($title)
+    ; Go to important update list.
+	MyAuto_ClickObject($oWnd, $cImportantUpdateAvailableLink)
 
-	; Go to optional update list.
-	ControlFocus($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
-	Send("+{TAB}{SPACE}")
-	$hWnd2 = WinWait("Select updates to install")
+	; Hide update of newer versions of Internet Explorer
+    MyAuto_ClickObject($oWnd, $cImportantUpdateListLink)
+	; Note: new Internet Explorer listitem may exist in the Important updates tab or the Optional updates tab.
+	HideInternetExplorerFromUpdates($oWnd)
 
 	; Check Japanese Language Pack
-	Local Const $iItemCountInWindows7Section = 5
-	If MyUtil_ListViewGoToItemWithOffset($hWnd2, "", "[CLASS:WuDuiListView; INSTANCE:1]", _
-			"Japanese Language Pack - Windows 7 Service Pack 1 (KB2483139)", 1, _
-			$iItemCountInWindows7Section + 1) = 0 Then
-		Send("{SPACE}")
-		MyProgress_Step("Selected Japanese Language Pack to install")
-		Sleep(1000)
-	Else
-		MsgBox(0, @ScriptName, "japanese language pack not found in list", 5)
-	EndIf
+    MyAuto_ClickObject($oWnd, $cOptionalUpdateListLink)
+    Local $oListItem = _UIA_getObjectByFindAll($oWnd, $cJapaneseLanguagePackListItem, $TreeScope_SubTree)
+    _UIA_action($oListItem, "focus")
+    _UIA_action($oListItem, "sendkeys", " ")
+    MyProgress_Step("Selected Japanese Language Pack to install")
+    Sleep(1000)
+	; Note: new Internet Explorer listitem may exist in the Important updates tab or the Optional updates tab.
+	HideInternetExplorerFromUpdates($oWnd)
 
+    MyAuto_ClickObject($oWnd, $cOKButton)
+
+    MyAuto_ClickObject($oWnd, $cInstallUpdatesButton)
 	MyProgress_Step("Installing Japanese language pack and other updates.")
-	ControlClick($hWnd, "", "[CLASS:Button; TEXT:OK]")
-	WinWaitActive($title)
-	ControlClick($hWnd, "", "[CLASS:Button; TEXT:&Install updates]")
+    MyAuto_WaitForObjectToAppear($oWnd, $cInstallUpdatesButton)
 
 	; Wait for [Restart now] button, but don't press it.
 	MyUtil_ControlWaitVisible($hWnd, "", "[CLASS:Button; TEXT:&Restart now]")
 	MyProgress_Step("Finished installation.")
 	Sleep(1000)
 EndFunc   ;==>InstallJapaneseLanguagePack
+
+Func HideInternetExplorerFromUpdates($oWnd)
+    Local Const $cInternetExplorerForWindowsListItem = "title:=^Internet Explorer \d+ for Windows"
+
+    Local $oIELink = _UIA_getObjectByFindAll($oWnd, $cInternetExplorerForWindowsListItem, $TreeScope_SubTree)
+    If IsObj($oIELink) Then
+	   _UIA_action($oIELink, "rightclick")
+	   _UIA_action($oIELink, "sendkeys", "{UP}{ENTER}")
+
+	   MyProgress_Step("Hide update of newer version of Internet Explorer")
+	   Sleep(1000)
+    EndIf
+EndFunc
 
 Func ChangeRegsionWin8()
 	MyProgress_Step("Start processing.", "Change Region.")
