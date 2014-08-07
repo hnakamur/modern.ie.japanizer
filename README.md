@@ -19,6 +19,6 @@ To do
 ## License
 
 - My sources: MIT
-- UIAWrappers.au3: GPL 
+- UIAWrappers.au3: GPL or BSD 
     - downloaded from http://www.autoitscript.com/forum/topic/153520-iuiautomation-ms-framework-automate-chrome-ff-ie/
 
